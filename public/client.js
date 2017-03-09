@@ -1,8 +1,4 @@
 // shorthand for $(document).ready(...)
-
-var br = '<br>'
-
-
 $(function() {
     var socket = io();
     $('form').submit(function(){
