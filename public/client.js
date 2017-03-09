@@ -7,8 +7,26 @@ $(function() {
         return false;
     });
     socket.on('chat', function(msg){
-        $('#messages').append($('<li>').text(msg));
+        if (msg.MessageType) {
+            switch(msg.MessageType) {
+                case "system":
+                    break;
+                case "chat":
+                    userMessage(msg);
+                    break;
+
+            }
+
+        }
+
     });
 });
+
+function userMessage(msg){
+    var message = '<b>' + msg.TimeStamp + '</b> ';
+    message += "<span style='color:" + msg.UserInfo.Color + ";'>" + msg.UserInfo.NickName + ": </span>";
+    message += msg.Message;
+    $('#messages').append($('<li>').html(message));
+}
 
 
