@@ -50,17 +50,27 @@ function generateMessage(socket, type, message) {
 }
 
 function checkSpecialCommand(socket, message) {
-    if (message.substring(0,5).localeCompare("/nick") == 0 ){
-        if (users.has(message.substring(6, message.length))){
-            return generateMessage(socket, "system", "Nick name already exists! Please pick a different nick name");
-        } else {
+    var command = message.split(" ")[0];
+    switch(command) {
+        case "/nick":
+            if (users.has(message.substring(6, message.length))){
+                return generateMessage(socket, "system", "Nick name already exists! Please pick a different nick name");
+            } else {
+                oldUserInfo = users.get(socket);
+                oldName = oldUserInfo.NickName;
+                users.delete(socket);
+                oldUserInfo.NickName = message.substring(6, message.length);
+                users.set(socket, oldUserInfo);
+                return generateMessage(socket, "chat", oldName + " has changed their nick name to " + users.get(socket).NickName);
+            }
+            break;
+        case "/nickcolor":
             oldUserInfo = users.get(socket);
-            oldName = oldUserInfo.NickName;
+            oldColor = oldUserInfo.Color;
             users.delete(socket);
-            oldUserInfo.NickName = message.substring(6, message.length);
+            oldUserInfo.Color = "#"+message.substring(11, 18);
             users.set(socket, oldUserInfo);
-            return generateMessage(socket, "chat", oldName + " has changed their nick name to " + users.get(socket).NickName);
-        }
+            return generateMessage(socket, "chat", users.get(socket).NickName + " has changed their color to " + oldColor);
     }
     return false;
 }
