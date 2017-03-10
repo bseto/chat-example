@@ -46,7 +46,7 @@ $(function() {
     });
 
     socket.on('updateUserList', function(user) {
-        $('#users').append($('<li>').html(user.NickName));
+        $('#users').prepend($('<li>').html(user.NickName));
     });
 
 });
@@ -54,21 +54,27 @@ function System(msg){
     var message = '<b>' + msg.TimeStamp + ' ';
     message += "<span style='color:#34495E;'>System</b> : </span>";
     message += msg.Message;
-    $('#messages').append($('<li>').html(message));
+    $('#messages').prepend($('<li>').html(message));
+    var messageDiv = document.getElementById("messages");
+    messageDiv.scrollTop = messageDiv.scrollHeight;
 }
 
 function Message(msg){
     var message = '<b>' + msg.TimeStamp + '</b> ';
     message += "<span style='color:" + msg.UserInfo.Color + ";'>" + msg.UserInfo.NickName + ": </span>";
     message += msg.Message;
-    $('#messages').append($('<li>').html(message));
+    $('#messages').prepend($('<li>').html(message));
+    var messageDiv = document.getElementById("messages");
+    messageDiv.scrollTop = messageDiv.scrollHeight;
 }
 
 function UserMessage(msg){
     var message = '<b>' + msg.TimeStamp + ' ';
     message += "<span style='color:" + msg.UserInfo.Color + ";'>" + msg.UserInfo.NickName + ": </span>";
     message += msg.Message + '</b>';
-    $('#messages').append($('<li>').html(message));
+    $('#messages').prepend($('<li>').html(message));
+    var messageDiv = document.getElementById("messages");
+    messageDiv.scrollTop = messageDiv.scrollHeight;
 }
 
 
