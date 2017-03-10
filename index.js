@@ -37,14 +37,10 @@ io.on('connection', function(socket){
     });
 
     socket.on('chat', function(msg){
-        var command = checkSpecialCommand(socket, msg);
+        var command = checkSpecialCommand(socket, msg, io);
         if (command == false) {
             socket.emit('chat', generateMessage(socket, "user", "nolog", msg));
             socket.broadcast.emit('chat', generateMessage(socket, "chat", "log", msg));
-            io.emit('clearUserList');
-            users.forEach(function(user, key){
-                io.emit('updateUserList', user);
-            });
         } else {
             io.emit('chat', command);
         }
@@ -84,6 +80,10 @@ function checkSpecialCommand(socket, message) {
                 users.delete(socket);
                 oldUserInfo.NickName = message.substring(6, message.length);
                 users.set(socket, oldUserInfo);
+                io.emit('clearUserList');
+                users.forEach(function(user, key){
+                    io.emit('updateUserList', user);
+                });
                 return generateMessage(socket, "system", "log", oldName + " has changed their nick name to " + users.get(socket).NickName);
             }
             break;
