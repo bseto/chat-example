@@ -29,20 +29,31 @@ io.on('connection', function(socket){
     //Everyone Else
     socket.broadcast.emit('chat', generateMessage(socket, "system", "log", users.get(socket).NickName + " has joined the room."));
 
+    //Change all user lists
+
+    io.emit('clearUserList');
+    users.forEach(function(user, key){
+        io.emit('updateUserList', user);
+    });
+
     socket.on('chat', function(msg){
         var command = checkSpecialCommand(socket, msg);
         if (command == false) {
             socket.emit('chat', generateMessage(socket, "user", "nolog", msg));
             socket.broadcast.emit('chat', generateMessage(socket, "chat", "log", msg));
+            io.emit('clearUserList');
+            users.forEach(function(user, key){
+                io.emit('updateUserList', user);
+            });
         } else {
             io.emit('chat', command);
         }
     });
 
-    //socket.on('disconnect', function(){
-    //io.emit('chat', generateMessage(socket, "disconnected"));
-    //users.delete(socket);
-    //});
+    socket.on('disconnect', function(){
+        io.emit('chat', generateMessage(socket, "chat", "log", "disconnected"));
+        users.delete(socket);
+    });
 });
 function generateMessage(socket, type, logbool, message) {
     var message = {

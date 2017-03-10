@@ -41,6 +41,14 @@ $(function() {
         }
     });
 
+    socket.on('clearUserList', function(user) {
+        $('#users').empty();
+    });
+
+    socket.on('updateUserList', function(user) {
+        $('#users').append($('<li>').html(user.NickName));
+    });
+
 });
 function System(msg){
     var message = '<b>' + msg.TimeStamp + ' ';
