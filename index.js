@@ -27,7 +27,12 @@ io.on('connection', function(socket){
     //socket.broadcast.emit('chat', generateMessage(socket, "has entered the room."));
 
     socket.on('chat', function(msg){
-        io.emit('chat', generateMessage(socket, "chat",  msg));
+        var command = checkSpecialCommand(socket, msg);
+        if (command == false) {
+            io.emit('chat', generateMessage(socket, "chat",  msg));
+        } else {
+            io.emit('chat', command);
+        }
     });
 
     //socket.on('disconnect', function(){
@@ -45,16 +50,19 @@ function generateMessage(socket, type, message) {
 }
 
 function checkSpecialCommand(socket, message) {
-    if (msg.substring(0,5).localeCompare("/nick") == 0 ){
-        if (users.has(msg.substring(6, msg.length))){
+    if (message.substring(0,5).localeCompare("/nick") == 0 ){
+        if (users.has(message.substring(6, message.length))){
             return generateMessage(socket, "system", "Nick name already exists! Please pick a different nick name");
         } else {
-            oldName = users.get(socket);
+            oldUserInfo = users.get(socket);
+            oldName = oldUserInfo.NickName;
             users.delete(socket);
-            users.set(socket, msg.substring(6, msg.length));
-            return generateMessage(socket, "chat", oldName + " has changed their nick name to " + users.get(socket));
+            oldUserInfo.NickName = message.substring(6, message.length);
+            users.set(socket, oldUserInfo);
+            return generateMessage(socket, "chat", oldName + " has changed their nick name to " + users.get(socket).NickName);
         }
     }
+    return false;
 }
 
 
@@ -74,3 +82,4 @@ function randomElement(list) {
     var index = Math.floor(Math.random() * list.length);
     return list[index]
 }
+

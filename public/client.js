@@ -14,11 +14,8 @@ $(function() {
                 case "chat":
                     userMessage(msg);
                     break;
-
             }
-
         }
-
     });
 });
 
