@@ -22,59 +22,71 @@ app.use(express.static(__dirname + '/public'));
 io.on('connection', function(socket){
 
     var cookie;
-    socket.emit('grabCookie', "chatroom");
-    socket.on('grabCookie', function(receive_cookie){
-        console.log(cookie);
+    socket.emit('grabCookie');
+
+    socket.on('gotCookie', function(receive_cookie){
         cookie = receive_cookie;
+        if(!users.has(cookie)) {
+            console.log("Server map does not contain cookie though. Invalid cookie: " + cookie);
+            socket.emit('deleteCookie');
+            socket.emit('grabCookie');
+            return;
+        }
+        //To self only
+        socket.emit('history', queueHistory);
+        socket.emit('chat', generateMessage(cookie, "system", "nolog", "Welcome! Your nickname is <b>"+ users.get(cookie).NickName + "</b>"));
+        //Everyone Else
+        socket.broadcast.emit('chat', generateMessage(cookie, "system", "log", users.get(cookie).NickName + " has joined the room."));
+
+        //Change all user lists
+        io.emit('clearUserList');
+        users.forEach(function(user, key){
+            io.emit('updateUserList', user);
+        });
     });
 
-    if(!cookie) {
+    socket.on('noCookie', function(receive_cookie){
+        console.log("NO cookie");
         var current_date = (new Date()).valueOf().toString();
         var random = Math.random().toString();
-        var hash = crypto.createHash('sha1').update(current_date + random).digest('hex');
-        socket.emit('setCookie', "chatroom", hash, 1);
-    } else {
+        var cookie = crypto.createHash('sha1').update(current_date + random).digest('hex');
+        console.log("Cookie is now:" + cookie);
+        socket.emit('setCookie', "chatroom", cookie, 1);
+        users.set(cookie, {
+            NickName: generateName(),
+            Color: "#3366ff"
+        });
+        //To self only
+        socket.emit('history', queueHistory);
+        socket.emit('chat', generateMessage(cookie, "system", "nolog", "Welcome! Your nickname is <b>"+ users.get(cookie).NickName + "</b>"));
+        //Everyone Else
+        socket.broadcast.emit('chat', generateMessage(cookie, "system", "log", users.get(cookie).NickName + " has joined the room."));
 
-    }
-
-
-    users.set(socket, {
-        NickName: generateName(),
-        Color: "#3366ff"
-    });
-    //To self only
-    socket.emit('history', queueHistory);
-    socket.emit('chat', generateMessage(socket, "system", "nolog", "Welcome! Your automatically assigned nickname is "+ users.get(socket).NickName));
-    //Everyone Else
-    socket.broadcast.emit('chat', generateMessage(socket, "system", "log", users.get(socket).NickName + " has joined the room."));
-
-    //Change all user lists
-
-    io.emit('clearUserList');
-    users.forEach(function(user, key){
-        io.emit('updateUserList', user);
+        //Change all user lists
+        io.emit('clearUserList');
+        users.forEach(function(user, key){
+            io.emit('updateUserList', user);
+        });
     });
 
-    socket.on('chat', function(msg){
-        var command = checkSpecialCommand(socket, msg, io);
+
+    socket.on('chat', function(msg, cookie){
+        var command = checkSpecialCommand(cookie, msg, io);
         if (command === false) {
-            socket.emit('chat', generateMessage(socket, "user", "nolog", msg));
-            socket.broadcast.emit('chat', generateMessage(socket, "chat", "log", msg));
+            socket.emit('chat', generateMessage(cookie, "user", "nolog", msg));
+            socket.broadcast.emit('chat', generateMessage(cookie, "chat", "log", msg));
         } else {
             io.emit('chat', command);
         }
     });
 
-    socket.on('disconnect', function(){
-        io.emit('chat', generateMessage(socket, "chat", "log", "disconnected"));
-        users.delete(socket);
-    });
 });
-function generateMessage(socket, type, logbool, message) {
+function generateMessage(cookie, type, logbool, message) {
+    console.log("generateMessage: cookie:" + cookie +  "\tType: " + type + "\tFor message: " + message);
     var message = {
         MessageType: type,
         Message: message,
-        UserInfo: users.get(socket),
+        UserInfo: users.get(cookie),
         TimeStamp: timestamp()
     }
 
@@ -87,32 +99,40 @@ function generateMessage(socket, type, logbool, message) {
     return message;
 }
 
-function checkSpecialCommand(socket, message) {
+function checkSpecialCommand(cookie, message) {
     var command = message.split(" ")[0];
     switch(command) {
         case "/nick":
-            if (users.has(message.substring(6, message.length))){
-                return generateMessage(socket, "system", "nolog", message.substring(6, message.length) + " Nick name already exists! Please pick a different nick name");
+            proposedNick = message.split(" ")[1];
+            if (!proposedNick) {
+                return generateMessage(cookie, "system", "nolog", "Invalid Name");
+            }
+            nickNameList = [];
+            users.forEach(function(nickname, key){
+                nickNameList.push(nickname.NickName);
+            });
+            if (nickNameList.find(function(names) { return names === proposedNick })){
+                return generateMessage(cookie, "system", "nolog", message.substring(6, message.length) + " Nick name already exists! Please pick a different nick name");
             } else {
-                oldUserInfo = users.get(socket);
+                oldUserInfo = users.get(cookie);
                 oldName = oldUserInfo.NickName;
-                users.delete(socket);
+                users.delete(cookie);
                 oldUserInfo.NickName = message.substring(6, message.length);
-                users.set(socket, oldUserInfo);
+                users.set(cookie, oldUserInfo);
                 io.emit('clearUserList');
                 users.forEach(function(user, key){
                     io.emit('updateUserList', user);
                 });
-                return generateMessage(socket, "system", "log", oldName + " has changed their nick name to " + users.get(socket).NickName);
+                return generateMessage(cookie, "system", "log", "<b>" + oldName + "</b> has changed their nick name to <b>" + users.get(cookie).NickName + "</b>");
             }
             break;
         case "/nickcolor":
-            oldUserInfo = users.get(socket);
+            oldUserInfo = users.get(cookie);
             oldColor = oldUserInfo.Color;
-            users.delete(socket);
+            users.delete(cookie);
             oldUserInfo.Color = "#"+message.substring(11, 18);
-            users.set(socket, oldUserInfo);
-            return generateMessage(socket, "chat", "log", users.get(socket).NickName + " has changed their color to " + oldColor);
+            users.set(cookie, oldUserInfo);
+            return generateMessage(cookie, "system", "log", users.get(cookie).NickName + " has changed their color to " + users.get(cookie).Color);
     }
     return false;
 }

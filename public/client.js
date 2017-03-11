@@ -3,26 +3,22 @@
 $(function() {
     var socket = io();
     $('form').submit(function(){
-        socket.emit('chat', $('#m').val());
+        socket.emit('chat', $('#m').val(), getCookie("chatroom"));
         $('#m').val('');
         return false;
     });
 
-    //From https://www.w3schools.com/js/js_cookies.asp
-    socket.on('grabCookie', function(cname){
-        var name = cname + "=";
-        var decodedCookie = decodeURIComponent(document.cookie);
-        var ca = decodedCookie.split(';');
-        for(var i = 0; i <ca.length; i++) {
-            var c = ca[i];
-            while (c.charAt(0) == ' ') {
-                c = c.substring(1);
-            }
-            if (c.indexOf(name) == 0) {
-                socket.emit('grabCookie', c.substring(name.length, c.length));
-            }
+    socket.on('grabCookie', function(){
+        var cookie = getCookie("chatroom");
+        if (!cookie) {
+            socket.emit('noCookie', cookie);
+        } else {
+            socket.emit('gotCookie', cookie);
         }
-        socket.emit('grabCookie', "");
+    });
+
+    socket.on('deleteCookie', function(){
+        document.cookie = "chatroom=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     });
 
     //From https://www.w3schools.com/js/js_cookies.asp
@@ -67,7 +63,6 @@ $(function() {
         }
     });
 
-
     socket.on('clearUserList', function(user) {
         $('#users').empty();
     });
@@ -78,16 +73,16 @@ $(function() {
 
 });
 function System(msg){
-    var message = '<b>' + msg.TimeStamp + ' ';
-    message += "<span style='color:#34495E;'>System</b> : </span>";
-    message += msg.Message;
+    var message = '<b>[' + msg.TimeStamp + '] ';
+    message += "<span style='color:#FF5733;'>System</b> : </span> <i>";
+    message += msg.Message + "</i>";
     $('#messages').prepend($('<li>').html(message));
     var messageDiv = document.getElementById("messages");
     messageDiv.scrollTop = messageDiv.scrollHeight;
 }
 
 function Message(msg){
-    var message = '<b>' + msg.TimeStamp + '</b> ';
+    var message = '<b>[' + msg.TimeStamp + ']</b> ';
     message += "<span style='color:" + msg.UserInfo.Color + ";'>" + msg.UserInfo.NickName + ": </span>";
     message += msg.Message;
     $('#messages').prepend($('<li>').html(message));
@@ -96,7 +91,7 @@ function Message(msg){
 }
 
 function UserMessage(msg){
-    var message = '<b>' + msg.TimeStamp + ' ';
+    var message = '<b>[' + msg.TimeStamp + '] ';
     message += "<span style='color:" + msg.UserInfo.Color + ";'>" + msg.UserInfo.NickName + ": </span>";
     message += msg.Message + '</b>';
     $('#messages').prepend($('<li>').html(message));
@@ -104,4 +99,21 @@ function UserMessage(msg){
     messageDiv.scrollTop = messageDiv.scrollHeight;
 }
 
+//From https://www.w3schools.com/js/js_cookies.asp
+function getCookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for(var i = 0; i <ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+
+        }
+    }
+    return "";
+}
 
