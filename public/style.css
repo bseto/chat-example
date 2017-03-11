@@ -1,7 +1,16 @@
-* { margin: 0; padding: 0; box-sizing: border-box; }
+html{
+	height: 100%;
+}
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing:
+	border-box;
+}
 body {
 	font-family: 'Titillium Web', sans-serif;
 	height: 100%;
+	position: relative;
 }
 form {
 	background: #000;
@@ -14,21 +23,27 @@ form input {
 	border: 0;
 	padding: 10px;
 	width: 90%;
-	margin-right: .5%;
+	margin-right: .65%;
 }
 form button {
 	width: 9%;
-	background: rgb(130, 224, 255);
+	background: #BDC3C7;
 	border: none;
 	padding: 10px;
 }
 .chat_area {
-	position: absolute;
-	right: 15%;
-	width: 85%;
-	height: 100%;
+	/*position: absolute;*/
+	/*right: 15%;*/
+	/*width: 85%;*/
+	/*height: 100%;*/
+	/*display: flex;*/
+	/*align-items: flex-end;*/
+	float: left;
+	padding-bottom: 10px;
 	display: flex;
 	align-items: flex-end;
+	width: 85%;
+	height: calc(100% - 2.5em);
 }
 
 ol {
@@ -39,12 +54,14 @@ ol {
 }
 
 #messages {
-	height:100%;
+	height:auto;
 	list-style-type: none;
 	display: flex;
-	flex-direction: column-reverse;
+	flex-direction: column;
 	overflow-y: auto;
 	min-height: 0px;
+	max-height:100%;
+	width: 100%;
 }
 #messages li {
 	padding: 5px 10px;
@@ -60,7 +77,8 @@ nav {
 	right: 0px;
 	width: 15%;
 	height: 100%;
-	background: #BF5740;
+	background: #1C2833;
+	color: #FFFFFF;
 	display: flex;
 }
 #users {
